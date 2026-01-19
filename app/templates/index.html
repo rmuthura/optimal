@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrono-Nutrition Meal Scheduler</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #eee;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2rem;
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            color: #00d9ff;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: #aaa;
+            margin-bottom: 6px;
+        }
+
+        input, select {
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 1rem;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #00d9ff;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .checkbox-group input {
+            width: 20px;
+            height: 20px;
+        }
+
+        button {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            color: #000;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            margin-left: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .buttons {
+            margin-top: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        #schedule {
+            display: none;
+        }
+
+        .meal-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border-left: 4px solid #00d9ff;
+        }
+
+        .meal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .meal-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .meal-time {
+            color: #00ff88;
+            font-weight: 600;
+        }
+
+        .meal-type {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .macros {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .macro {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .macro-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .macro-label {
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .reasoning {
+            font-size: 0.9rem;
+            color: #aaa;
+            font-style: italic;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .totals {
+            background: linear-gradient(90deg, rgba(0, 217, 255, 0.2), rgba(0, 255, 136, 0.2));
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .totals h3 {
+            margin-bottom: 16px;
+        }
+
+        .totals-grid {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .copy-btn {
+            margin-top: 20px;
+            background: transparent;
+            border: 1px solid #00d9ff;
+            color: #00d9ff;
+            padding: 10px 20px;
+        }
+
+        .copy-btn:hover {
+            background: rgba(0, 217, 255, 0.1);
+        }
+
+        .error {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid rgba(255, 0, 0, 0.5);
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+
+        .success {
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid rgba(0, 255, 136, 0.5);
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .macros {
+                gap: 12px;
+            }
+
+            .totals-grid {
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chrono-Nutrition</h1>
+        <p class="subtitle">Meal timing optimized by circadian biology</p>
+
+        <div class="card">
+            <h2>Your Schedule</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Wake Time</label>
+                    <input type="time" id="wake_time" value="07:00">
+                </div>
+                <div class="form-group">
+                    <label>Sleep Time</label>
+                    <input type="time" id="sleep_time" value="23:00">
+                </div>
+                <div class="form-group">
+                    <label>Number of Meals</label>
+                    <select id="num_meals">
+                        <option value="3">3 meals</option>
+                        <option value="4" selected>4 meals</option>
+                        <option value="5">5 meals</option>
+                        <option value="6">6 meals</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Workout (Optional)</h2>
+            <div class="checkbox-group">
+                <input type="checkbox" id="has_workout" checked>
+                <label for="has_workout" style="margin: 0;">I'm working out today</label>
+            </div>
+            <div class="form-grid" id="workout_fields" style="margin-top: 16px;">
+                <div class="form-group">
+                    <label>Workout Time</label>
+                    <input type="time" id="workout_time" value="17:00">
+                </div>
+                <div class="form-group">
+                    <label>Workout Type</label>
+                    <select id="workout_type">
+                        <option value="lifting">Lifting</option>
+                        <option value="cardio">Cardio</option>
+                        <option value="hybrid">Hybrid</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Duration (minutes)</label>
+                    <input type="number" id="workout_duration" value="60" min="15" max="180">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Nutrition Targets</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Daily Calories</label>
+                    <input type="number" id="calories" value="2500" min="1200" max="6000">
+                </div>
+                <div class="form-group">
+                    <label>Protein (g)</label>
+                    <input type="number" id="protein" value="180" min="50" max="400">
+                </div>
+                <div class="form-group">
+                    <label>Carbs (g) - optional</label>
+                    <input type="number" id="carbs" placeholder="Auto-calculate">
+                </div>
+                <div class="form-group">
+                    <label>Fat (g) - optional</label>
+                    <input type="number" id="fat" placeholder="Auto-calculate">
+                </div>
+                <div class="form-group">
+                    <label>Goal</label>
+                    <select id="goal">
+                        <option value="muscle_gain">Muscle Gain</option>
+                        <option value="fat_loss">Fat Loss</option>
+                        <option value="maintenance">Maintenance</option>
+                        <option value="performance">Performance</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="buttons">
+                <button class="btn-primary" onclick="generateSchedule()">Generate Schedule</button>
+                <button class="btn-secondary" onclick="testTelegram()">Test Telegram</button>
+            </div>
+        </div>
+
+        <div id="message"></div>
+
+        <div id="schedule" class="card">
+            <h2>Your Meal Schedule</h2>
+            <div id="meals"></div>
+            <div class="totals" id="totals"></div>
+            <div style="text-align: center;">
+                <button class="copy-btn" onclick="copySchedule()">Copy to Clipboard</button>
+                <button class="btn-primary" onclick="startNotifications()" style="margin-top: 20px;">
+                    Start Telegram Notifications
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle workout fields
+        document.getElementById('has_workout').addEventListener('change', function() {
+            document.getElementById('workout_fields').style.display = this.checked ? 'grid' : 'none';
+        });
+
+        function getFormData() {
+            const hasWorkout = document.getElementById('has_workout').checked;
+            return {
+                wake_time: document.getElementById('wake_time').value,
+                sleep_time: document.getElementById('sleep_time').value,
+                num_meals: document.getElementById('num_meals').value,
+                workout_time: hasWorkout ? document.getElementById('workout_time').value : null,
+                workout_type: hasWorkout ? document.getElementById('workout_type').value : null,
+                workout_duration: hasWorkout ? document.getElementById('workout_duration').value : 60,
+                calories: document.getElementById('calories').value,
+                protein: document.getElementById('protein').value,
+                carbs: document.getElementById('carbs').value || null,
+                fat: document.getElementById('fat').value || null,
+                goal: document.getElementById('goal').value
+            };
+        }
+
+        function showMessage(text, isError = false) {
+            const el = document.getElementById('message');
+            el.innerHTML = `<div class="${isError ? 'error' : 'success'}">${text}</div>`;
+            setTimeout(() => el.innerHTML = '', 5000);
+        }
+
+        async function generateSchedule() {
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(getFormData())
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    showMessage(data.error, true);
+                    return;
+                }
+
+                // Render meals
+                const mealsHtml = data.meals.map(meal => `
+                    <div class="meal-card">
+                        <div class="meal-header">
+                            <div>
+                                <div class="meal-title">Meal ${meal.number}</div>
+                                <div class="meal-type">${meal.type}</div>
+                            </div>
+                            <div class="meal-time">${meal.time}</div>
+                        </div>
+                        <div class="macros">
+                            <div class="macro">
+                                <span class="macro-value">${meal.calories}</span>
+                                <span class="macro-label">Calories</span>
+                            </div>
+                            <div class="macro">
+                                <span class="macro-value">${meal.protein}g</span>
+                                <span class="macro-label">Protein</span>
+                            </div>
+                            <div class="macro">
+                                <span class="macro-value">${meal.carbs}g</span>
+                                <span class="macro-label">Carbs</span>
+                            </div>
+                            <div class="macro">
+                                <span class="macro-value">${meal.fat}g</span>
+                                <span class="macro-label">Fat</span>
+                            </div>
+                        </div>
+                        <div class="reasoning">${meal.reasoning}</div>
+                    </div>
+                `).join('');
+
+                document.getElementById('meals').innerHTML = mealsHtml;
+
+                // Render totals
+                document.getElementById('totals').innerHTML = `
+                    <h3>Daily Totals</h3>
+                    <div class="totals-grid">
+                        <div class="macro">
+                            <span class="macro-value">${data.totals.calories}</span>
+                            <span class="macro-label">Calories</span>
+                        </div>
+                        <div class="macro">
+                            <span class="macro-value">${data.totals.protein}g</span>
+                            <span class="macro-label">Protein</span>
+                        </div>
+                        <div class="macro">
+                            <span class="macro-value">${data.totals.carbs}g</span>
+                            <span class="macro-label">Carbs</span>
+                        </div>
+                        <div class="macro">
+                            <span class="macro-value">${data.totals.fat}g</span>
+                            <span class="macro-label">Fat</span>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('schedule').style.display = 'block';
+                document.getElementById('schedule').scrollIntoView({ behavior: 'smooth' });
+
+                // Store for clipboard
+                window.currentSchedule = data;
+
+            } catch (error) {
+                showMessage('Failed to generate schedule: ' + error.message, true);
+            }
+        }
+
+        async function testTelegram() {
+            try {
+                const response = await fetch('/test-telegram', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('Test notification sent! Check your Telegram.');
+                } else {
+                    showMessage(data.error, true);
+                }
+            } catch (error) {
+                showMessage('Failed to test Telegram: ' + error.message, true);
+            }
+        }
+
+        async function startNotifications() {
+            try {
+                const response = await fetch('/start-notifications', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(getFormData())
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(data.message);
+                } else {
+                    showMessage(data.error, true);
+                }
+            } catch (error) {
+                showMessage('Failed to start notifications: ' + error.message, true);
+            }
+        }
+
+        function copySchedule() {
+            if (!window.currentSchedule) return;
+
+            const lines = ['YOUR MEAL SCHEDULE', '='.repeat(50), ''];
+
+            window.currentSchedule.meals.forEach(meal => {
+                lines.push(`MEAL ${meal.number} - ${meal.time} (${meal.type})`);
+                lines.push(`Calories: ${meal.calories} | Protein: ${meal.protein}g | Carbs: ${meal.carbs}g | Fat: ${meal.fat}g`);
+                lines.push(`Why: ${meal.reasoning}`);
+                lines.push('');
+            });
+
+            lines.push('='.repeat(50));
+            lines.push(`TOTALS: ${window.currentSchedule.totals.calories} cal | ${window.currentSchedule.totals.protein}g protein | ${window.currentSchedule.totals.carbs}g carbs | ${window.currentSchedule.totals.fat}g fat`);
+
+            navigator.clipboard.writeText(lines.join('\n'));
+            showMessage('Schedule copied to clipboard!');
+        }
+    </script>
+</body>
+</html>
