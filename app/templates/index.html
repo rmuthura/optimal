@@ -198,6 +198,15 @@
             border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
+        .food-suggestion {
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(0, 255, 136, 0.1);
+            border-radius: 8px;
+            border-left: 3px solid #00ff88;
+            font-size: 0.95rem;
+        }
+
         .totals {
             background: linear-gradient(90deg, rgba(0, 217, 255, 0.2), rgba(0, 255, 136, 0.2));
             border-radius: 12px;
@@ -278,6 +287,7 @@
                 <div class="form-group">
                     <label>Number of Meals</label>
                     <select id="num_meals">
+                        <option value="2">2 meals</option>
                         <option value="3">3 meals</option>
                         <option value="4" selected>4 meals</option>
                         <option value="5">5 meals</option>
@@ -311,6 +321,12 @@
                     <input type="number" id="workout_duration" value="60" min="15" max="180">
                 </div>
             </div>
+        </div>
+
+        <div class="card">
+            <h2>Grocery List (Optional)</h2>
+            <p style="color: #888; font-size: 0.9rem; margin-bottom: 12px;">Enter foods you have available, one per line. We'll suggest what to eat for each meal.</p>
+            <textarea id="grocery_list" rows="4" placeholder="chicken breast&#10;eggs&#10;rice&#10;broccoli&#10;olive oil&#10;greek yogurt" style="width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.3); color: #fff; font-size: 1rem; resize: vertical;"></textarea>
         </div>
 
         <div class="card">
@@ -372,6 +388,7 @@
 
         function getFormData() {
             const hasWorkout = document.getElementById('has_workout').checked;
+            const groceryList = document.getElementById('grocery_list').value.trim();
             return {
                 wake_time: document.getElementById('wake_time').value,
                 sleep_time: document.getElementById('sleep_time').value,
@@ -383,7 +400,8 @@
                 protein: document.getElementById('protein').value,
                 carbs: document.getElementById('carbs').value || null,
                 fat: document.getElementById('fat').value || null,
-                goal: document.getElementById('goal').value
+                goal: document.getElementById('goal').value,
+                grocery_list: groceryList ? groceryList.split('\n').map(s => s.trim()).filter(s => s) : []
             };
         }
 
@@ -437,6 +455,7 @@
                             </div>
                         </div>
                         <div class="reasoning">${meal.reasoning}</div>
+                        ${meal.food_suggestion ? `<div class="food-suggestion"><strong>Eat:</strong> ${meal.food_suggestion}</div>` : ''}
                     </div>
                 `).join('');
 

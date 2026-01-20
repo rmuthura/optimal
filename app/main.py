@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.scheduler import generate_schedule
 from src.notifier import TelegramNotifier, ScheduledNotifier
+from src.food_suggestions import generate_meal_suggestions
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -50,6 +51,9 @@ def generate():
 
         schedule = generate_schedule(user_data)
 
+        # Get grocery list for food suggestions
+        grocery_list = data.get("grocery_list", [])
+
         # Format response
         meals = []
         for meal in schedule.meals:
@@ -64,6 +68,13 @@ def generate():
                 "fat": meal.fat_g,
                 "reasoning": meal.reasoning
             })
+
+        # Generate food suggestions if grocery list provided
+        if grocery_list:
+            suggestions = generate_meal_suggestions(meals, grocery_list)
+            for i, suggestion in enumerate(suggestions):
+                if suggestion:
+                    meals[i]["food_suggestion"] = suggestion
 
         return jsonify({
             "success": True,
