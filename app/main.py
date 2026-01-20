@@ -12,6 +12,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.scheduler import generate_schedule
 from src.notifier import TelegramNotifier, ScheduledNotifier
 from src.food_suggestions import generate_meal_suggestions
+from src.calorie_calculator import (
+    UserStats, Gender, ActivityLevel, Goal as CalcGoal,
+    get_recommendation, get_all_options
+)
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -144,6 +148,67 @@ def start_notifications():
             "success": False,
             "error": str(e)
         }), 500
+
+
+@app.route("/calculate-calories", methods=["POST"])
+def calculate_calories():
+    """Calculate calorie and macro recommendations from body stats."""
+    try:
+        data = request.get_json()
+
+        # Parse inputs
+        weight = float(data.get("weight", 70))
+        height = float(data.get("height", 170))
+        age = int(data.get("age", 30))
+        gender = Gender(data.get("gender", "male"))
+        activity = ActivityLevel(data.get("activity", "moderately_active"))
+        goal = CalcGoal(data.get("calc_goal", "maintain"))
+        body_fat = float(data["body_fat"]) if data.get("body_fat") else None
+
+        # Handle unit conversion
+        if data.get("weight_unit") == "lbs":
+            weight = weight * 0.453592
+        if data.get("height_unit") == "ft":
+            feet = float(data.get("height_feet", 5))
+            inches = float(data.get("height_inches", 10))
+            height = (feet * 12 + inches) * 2.54
+
+        stats = UserStats(
+            weight_kg=weight,
+            height_cm=height,
+            age=age,
+            gender=gender,
+            activity_level=activity,
+            goal=goal,
+            body_fat_pct=body_fat
+        )
+
+        rec = get_recommendation(stats)
+        all_options = get_all_options(stats)
+
+        return jsonify({
+            "success": True,
+            "recommendation": {
+                "bmr": rec.bmr,
+                "tdee": rec.tdee,
+                "calories": rec.target_calories,
+                "protein": rec.protein_g,
+                "carbs": rec.carbs_g,
+                "fat": rec.fat_g,
+                "protein_pct": rec.protein_pct,
+                "carbs_pct": rec.carbs_pct,
+                "fat_pct": rec.fat_pct,
+                "weekly_change_kg": rec.weekly_change_kg,
+                "explanation": rec.explanation
+            },
+            "all_options": all_options
+        })
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 400
 
 
 @app.route("/test-telegram", methods=["POST"])

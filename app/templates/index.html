@@ -324,6 +324,111 @@
         </div>
 
         <div class="card">
+            <h2>Calculate My Calories</h2>
+            <p style="color: #888; font-size: 0.9rem; margin-bottom: 16px;">Not sure how much to eat? Enter your stats and we'll calculate it.</p>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Weight</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="number" id="weight" value="70" min="30" max="300" style="flex: 1;">
+                        <select id="weight_unit" style="width: 70px;">
+                            <option value="kg">kg</option>
+                            <option value="lbs">lbs</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Height</label>
+                    <div id="height_metric">
+                        <div style="display: flex; gap: 8px;">
+                            <input type="number" id="height" value="170" min="100" max="250" style="flex: 1;">
+                            <select id="height_unit" style="width: 70px;" onchange="toggleHeightInput()">
+                                <option value="cm">cm</option>
+                                <option value="ft">ft/in</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="height_imperial" style="display: none;">
+                        <div style="display: flex; gap: 8px;">
+                            <input type="number" id="height_feet" value="5" min="3" max="8" style="width: 60px;" placeholder="ft">
+                            <input type="number" id="height_inches" value="10" min="0" max="11" style="flex: 1;" placeholder="in">
+                            <select style="width: 70px;" onchange="toggleHeightInput()">
+                                <option value="cm">cm</option>
+                                <option value="ft" selected>ft/in</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Age</label>
+                    <input type="number" id="age" value="30" min="15" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Gender</label>
+                    <select id="gender">
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Activity Level</label>
+                    <select id="activity">
+                        <option value="sedentary">Sedentary (desk job)</option>
+                        <option value="lightly_active">Light (1-3 days/week)</option>
+                        <option value="moderately_active" selected>Moderate (3-5 days/week)</option>
+                        <option value="very_active">Very Active (6-7 days/week)</option>
+                        <option value="extremely_active">Athlete/Physical Job</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Goal</label>
+                    <select id="calc_goal">
+                        <option value="lose_fast">Lose Fast (-0.75kg/week)</option>
+                        <option value="lose">Lose (-0.5kg/week)</option>
+                        <option value="lose_slow">Lose Slow (-0.25kg/week)</option>
+                        <option value="maintain">Maintain Weight</option>
+                        <option value="gain_slow">Lean Bulk (+0.25kg/week)</option>
+                        <option value="gain">Bulk (+0.5kg/week)</option>
+                        <option value="gain_fast">Fast Bulk (+0.75kg/week)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Body Fat % (optional)</label>
+                    <input type="number" id="body_fat" placeholder="e.g. 20" min="3" max="60">
+                </div>
+            </div>
+            <div style="margin-top: 20px;">
+                <button class="btn-primary" onclick="calculateCalories()">Calculate My Macros</button>
+            </div>
+            <div id="calc_result" style="display: none; margin-top: 20px;">
+                <div class="totals" style="text-align: left;">
+                    <div id="calc_explanation" style="margin-bottom: 16px; font-size: 0.9rem; color: #aaa;"></div>
+                    <div class="totals-grid" style="justify-content: flex-start;">
+                        <div class="macro">
+                            <span class="macro-value" id="calc_calories">0</span>
+                            <span class="macro-label">Calories</span>
+                        </div>
+                        <div class="macro">
+                            <span class="macro-value" id="calc_protein">0g</span>
+                            <span class="macro-label">Protein</span>
+                        </div>
+                        <div class="macro">
+                            <span class="macro-value" id="calc_carbs">0g</span>
+                            <span class="macro-label">Carbs</span>
+                        </div>
+                        <div class="macro">
+                            <span class="macro-value" id="calc_fat">0g</span>
+                            <span class="macro-label">Fat</span>
+                        </div>
+                    </div>
+                    <button class="btn-secondary" onclick="applyCalculation()" style="margin-top: 16px;">
+                        Use These Values ↓
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
             <h2>Grocery List (Optional)</h2>
             <p style="color: #888; font-size: 0.9rem; margin-bottom: 12px;">Enter foods you have available, one per line. We'll suggest what to eat for each meal.</p>
             <textarea id="grocery_list" rows="4" placeholder="chicken breast&#10;eggs&#10;rice&#10;broccoli&#10;olive oil&#10;greek yogurt" style="width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.3); color: #fff; font-size: 1rem; resize: vertical;"></textarea>
@@ -385,6 +490,88 @@
         document.getElementById('has_workout').addEventListener('change', function() {
             document.getElementById('workout_fields').style.display = this.checked ? 'grid' : 'none';
         });
+
+        // Toggle height input between metric and imperial
+        function toggleHeightInput() {
+            const unit = document.getElementById('height_unit').value;
+            document.getElementById('height_metric').style.display = unit === 'cm' ? 'block' : 'none';
+            document.getElementById('height_imperial').style.display = unit === 'ft' ? 'block' : 'none';
+        }
+
+        // Store calculation result
+        let calculatedMacros = null;
+
+        async function calculateCalories() {
+            try {
+                const heightUnit = document.getElementById('height_unit').value;
+                const data = {
+                    weight: document.getElementById('weight').value,
+                    weight_unit: document.getElementById('weight_unit').value,
+                    height: document.getElementById('height').value,
+                    height_unit: heightUnit,
+                    height_feet: document.getElementById('height_feet').value,
+                    height_inches: document.getElementById('height_inches').value,
+                    age: document.getElementById('age').value,
+                    gender: document.getElementById('gender').value,
+                    activity: document.getElementById('activity').value,
+                    calc_goal: document.getElementById('calc_goal').value,
+                    body_fat: document.getElementById('body_fat').value || null
+                };
+
+                const response = await fetch('/calculate-calories', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    showMessage(result.error, true);
+                    return;
+                }
+
+                calculatedMacros = result.recommendation;
+
+                // Display results
+                document.getElementById('calc_calories').textContent = calculatedMacros.calories;
+                document.getElementById('calc_protein').textContent = calculatedMacros.protein + 'g';
+                document.getElementById('calc_carbs').textContent = calculatedMacros.carbs + 'g';
+                document.getElementById('calc_fat').textContent = calculatedMacros.fat + 'g';
+                document.getElementById('calc_explanation').textContent = calculatedMacros.explanation;
+                document.getElementById('calc_result').style.display = 'block';
+
+            } catch (error) {
+                showMessage('Failed to calculate: ' + error.message, true);
+            }
+        }
+
+        function applyCalculation() {
+            if (!calculatedMacros) return;
+
+            document.getElementById('calories').value = calculatedMacros.calories;
+            document.getElementById('protein').value = calculatedMacros.protein;
+            document.getElementById('carbs').value = calculatedMacros.carbs;
+            document.getElementById('fat').value = calculatedMacros.fat;
+
+            // Map calculator goal to scheduler goal
+            const goalMap = {
+                'lose_fast': 'fat_loss',
+                'lose': 'fat_loss',
+                'lose_slow': 'fat_loss',
+                'maintain': 'maintenance',
+                'gain_slow': 'muscle_gain',
+                'gain': 'muscle_gain',
+                'gain_fast': 'muscle_gain'
+            };
+            const calcGoal = document.getElementById('calc_goal').value;
+            document.getElementById('goal').value = goalMap[calcGoal] || 'maintenance';
+
+            showMessage('Macros applied! Scroll down to generate your schedule.');
+
+            // Scroll to nutrition section
+            document.getElementById('calories').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
 
         function getFormData() {
             const hasWorkout = document.getElementById('has_workout').checked;
